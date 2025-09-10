@@ -1,21 +1,45 @@
 import React, { useState } from 'react';
 import './App.css';
-import mapImage from './map.jpg';
-
-const pins = [
-  { id: 1, name: 'IC名A', top: 110, left: 350 },
-  { id: 2, name: 'IC名B', top: 305, left: 50 },
-];
+import {
+  GoogleMap,
+  LoadScript,
+  InfoWindow,
+  DirectionsRenderer,
+} from "@react-google-maps/api";
 
 function App() {
   const [start, setStart] = useState('');
   const [goal, setGoal] = useState('');
+  const [selected, setSelected] = useState(null);
+  const [directions, setDirections] = useState(null);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (!start || !goal) return;
+
+    const service = new window.google.maps.DirectionsService();
+    service.route(
+      {
+        origin: start,
+        destination: goal,
+        travelMode: window.google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === "OK") {
+          setDirections(result);
+        } else {
+          console.error("Directions request failed due to " + status);
+        }
+      }
+    );
+  };
+
 
   return (
     <div className="App" style={{ maxWidth: 700, margin: '0 auto', padding: 20 }}>
       <h1>高速道路IC可視化デモ</h1>
 
-      <form style={{ marginBottom: 20 }}>
+      <form style={{ marginBottom: 20 }} onSubmit={handleSearch}>
         <label>
           出発地点:
           <input
@@ -34,61 +58,35 @@ function App() {
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             placeholder="例: 大阪駅"
-            style={{ marginLeft: 8 }}
+            style={{ marginLeft: 8, marginRight: 20  }}
           />
         </label>
+        
+        <button type="submit" style={{ marginLeft: 10 }}>経路検索</button>
       </form>
 
-      <div
-        id="map"
-        style={{
-          position: 'relative',
-          width: 600,
-          height: 400,
-          border: '1px solid #ccc',
-          backgroundImage: `url(${mapImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-        }}
-      >
-        {pins.map((pin) => (
-          <React.Fragment key={pin.id}>
-            <div
-              className="pin"
-              style={{
-                position: 'absolute',
-                top: pin.top,
-                left: pin.left,
-                width: 24,
-                height: 24,
-                backgroundColor: 'red',
-                borderRadius: '50% 50% 50% 0',
-                transform: 'rotate(-45deg)',
-                cursor: 'pointer',
-              }}
-              title={pin.name}
-            />
-            <div
-              className="tooltip"
-              style={{
-                position: 'absolute',
-                top: pin.top - 20,
-                left: pin.left + 30,
-                backgroundColor: '#333',
-                color: '#fff',
-                padding: '4px 8px',
-                borderRadius: 4,
-                whiteSpace: 'nowrap',
-                fontSize: 14,
-              }}
+      <LoadScript googleMapsApiKey="AIzaSyD9PUKlSOwulEI8h7tLHIpO8Yt09Vh8OK4">
+        <GoogleMap
+          mapContainerStyle={{width: "100%", height: "500px"}}
+          center={{lat: 36.2048, lng: 138.2529}}
+          zoom={5}
+        >
+          {selected && (
+            <InfoWindow
+              position={selected.position}
+              onCloseClick={() => setSelected(null)}
             >
-              {pin.name}
-            </div>
-          </React.Fragment>
-        ))}
-      </div>
+              <div>{selected.name}</div>
+            </InfoWindow>
+          )}
+          
+          {directions && (
+            <DirectionsRenderer directions={directions} />
+          )}
+        </GoogleMap>
+      </LoadScript>
     </div>
   );
-}
+}    
 
 export default App;
