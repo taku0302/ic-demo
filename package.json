@@ -1,5 +1,24 @@
 {
   "dependencies": {
-    "@react-google-maps/api": "^2.20.7"
-  }
+    "@react-google-maps/api": "^2.20.7",
+    "node-fetch": "^3.3.2"
+  },
+  "name": "ic-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taku0302/ic-demo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/taku0302/ic-demo/issues"
+  },
+  "homepage": "https://github.com/taku0302/ic-demo#readme"
 }
