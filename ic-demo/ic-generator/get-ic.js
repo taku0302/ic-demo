@@ -40,7 +40,7 @@ async function fetchICData() {
   }
 
   fs.writeFileSync(
-    "ic-data.json",
+    "ic-data-auto.json",
     JSON.stringify(results, null, 2),
     "utf-8"
   );
