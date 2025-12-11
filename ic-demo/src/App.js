@@ -59,51 +59,80 @@ function App() {
   };
 
   // 経路検索
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!start || !goal) return;
+const handleSearch = (e) => {
+  e.preventDefault();
+  if (!start || !goal) return;
 
-    const service = new window.google.maps.DirectionsService();
-    service.route(
-      {
-        origin: start,
-        destination: goal,
-        travelMode: window.google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === "OK") {
-          setDirections(result);
-          const leg = result.routes[0].legs[0];
-          const startPos = leg.start_location;
-          const endPos = leg.end_location;
-          const path = result.routes[0].overview_path;
+  const NEAR_THRESHOLD_KM = 5; // 5km 以上離れていたら無効
+  const service = new window.google.maps.DirectionsService();
 
-          const icOnRoute = icData.filter(ic => isOnRoute(ic, path));
-          const nearestStartIC = findNearestIC(startPos, icOnRoute);
-          const nearestGoalIC = findNearestIC(endPos, icOnRoute);
+  service.route(
+    {
+      origin: start,
+      destination: goal,
+      travelMode: window.google.maps.TravelMode.DRIVING,
+    },
+    (result, status) => {
+      if (status === "OK") {
+        setDirections(result);
 
-          setStartIC(nearestStartIC);
-          setGoalIC(nearestGoalIC);
+        const leg = result.routes[0].legs[0];
+        const startPos = leg.start_location;
+        const endPos = leg.end_location;
+        const path = result.routes[0].overview_path;
 
-          const uniqueICs = [];
-          if (nearestStartIC) uniqueICs.push(nearestStartIC);
-          if (
-            nearestGoalIC &&
-            (nearestGoalIC.lat !== nearestStartIC?.lat || nearestGoalIC.lng !== nearestStartIC?.lng)
-          ) {
-            uniqueICs.push(nearestGoalIC);
-          }
-          setFilteredICs(uniqueICs);
+        // 経路上ICのみに絞る
+        const icOnRoute = icData.filter(ic => isOnRoute(ic, path));
 
-          const bounds = new window.google.maps.LatLngBounds();
-          path.forEach(p => bounds.extend(p));
-          mapRef.current.fitBounds(bounds);
-        } else {
-          console.error("Directions request failed due to " + status);
+        // 最寄りIC
+        let nearestStartIC = findNearestIC(startPos, icOnRoute);
+        let nearestGoalIC = findNearestIC(endPos, icOnRoute);
+
+        // 距離チェック
+        if (nearestStartIC) {
+          const distStartIC = getDistance(
+            startPos.lat(), startPos.lng(),
+            nearestStartIC.lat, nearestStartIC.lng
+          );
+          if (distStartIC > NEAR_THRESHOLD_KM) nearestStartIC = null;
         }
+
+        if (nearestGoalIC) {
+          const distGoalIC = getDistance(
+            endPos.lat(), endPos.lng(),
+            nearestGoalIC.lat, nearestGoalIC.lng
+          );
+          if (distGoalIC > NEAR_THRESHOLD_KM) nearestGoalIC = null;
+        }
+
+        // state更新
+        setStartIC(nearestStartIC);
+        setGoalIC(nearestGoalIC);
+
+        // 重複除外した表示用ICを作成
+        const uniqueICs = [];
+        if (nearestStartIC) uniqueICs.push(nearestStartIC);
+        if (
+          nearestGoalIC &&
+          (nearestGoalIC.lat !== nearestStartIC?.lat ||
+           nearestGoalIC.lng !== nearestStartIC?.lng)
+        ) {
+          uniqueICs.push(nearestGoalIC);
+        }
+
+        setFilteredICs(uniqueICs);
+
+        // 地図を経路全体にフィット
+        const bounds = new window.google.maps.LatLngBounds();
+        path.forEach(p => bounds.extend(p));
+        mapRef.current.fitBounds(bounds);
+
+      } else {
+        console.error("Directions request failed due to " + status);
       }
-    );
-  };
+    }
+  );
+};
 
   return (
     <div className="App" style={{ maxWidth: 700, margin: '0 auto', padding: 20 }}>
