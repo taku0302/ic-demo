@@ -63,7 +63,7 @@ const handleSearch = (e) => {
   e.preventDefault();
   if (!start || !goal) return;
 
-  const NEAR_THRESHOLD_KM = 5; // 5km 以上離れていたら無効
+  const NEAR_THRESHOLD_KM = 10; // 10km以上離れていたら無効
   const service = new window.google.maps.DirectionsService();
 
   service.route(
@@ -175,7 +175,8 @@ const handleSearch = (e) => {
             <InfoWindow
               key={index}
               position={{ lat: ic.lat, lng: ic.lng }}
-              options={{ disableAutoPan: true, pixelOffset: new window.google.maps.Size(0, -30) }}
+              options={{ disableAutoPan: true, closeBoxURL: "",
+                enableEventPropagation: true, pixelOffset: new window.google.maps.Size(0, -30) }}
             >
               <div
                 style={{
